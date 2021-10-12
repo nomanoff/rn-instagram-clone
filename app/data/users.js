@@ -28,4 +28,11 @@ export const USERS = [
     image:
       "https://www.clipartkey.com/mpngs/m/287-2870027_gogo-big-hero-6-characters.png",
   },
+  {
+    user: "leo",
+    image:
+      "https://www.clipartkey.com/mpngs/m/287-2870027_gogo-big-hero-6-characters.png",
+  },
 ];
+
+// Runner.prototype.gameOver = function (){}
