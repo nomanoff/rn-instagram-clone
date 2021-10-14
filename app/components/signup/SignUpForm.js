@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -29,24 +29,25 @@ const onSignUp = async (email, password, username) => {
     const authUser = await firebase
       .auth()
       .createUserWithEmailAndPassword(email, password);
-    console.log(" Account successfully created!");
+    console.log(" Account successfully created!", authUser);
 
-    db.collection("user").add({
-      owner_uid: authUser.user.uid,
-      username: username,
-      email: authUser.user.email,
-      profile_picture: await getRandomProfilePicture(),
-    });
+    db.collection("users")
+      .doc(authUser.user.email)
+      .set({
+        owner_uid: authUser.user.uid,
+        username: username,
+        email: authUser.user.email,
+        profile_picture: await getRandomProfilePicture(),
+      });
   } catch (error) {
     Alert.alert("Something went wrong 🙁", error.message);
   }
 };
 
 const getRandomProfilePicture = async () => {
-  const response = await fetch("https://randomuser.me/api");
-  const data = await response.json();
-
-  return data.results[0].picture.large;
+  const response =
+    "https://dadfordisney.files.wordpress.com/2015/04/baymax-1.jpg";
+  return response;
 };
 
 const SignUpForm = ({ navigation }) => {

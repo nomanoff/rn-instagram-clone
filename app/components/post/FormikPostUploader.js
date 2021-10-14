@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet, TextInput, Text, Image, Button } from "react-native";
 import * as Yup from "yup";
 import { Formik } from "formik";
 import { Divider } from "react-native-elements";
 import validUrl from "valid-url";
 import routes from "../../navigation/routes";
+import { db, firebase } from "../../../firebase";
 
 const PLACEHOLDER_IMAGE =
   "https://www.brownweinraub.com/wp-content/uploads/2017/09/placeholder.jpg";
@@ -15,14 +16,57 @@ const uploadPostSchema = Yup.object().shape({
 
 function FormikPostUploader({ navigation }) {
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [currentLoggedUser, setCurrentLoggedUser] = useState(null);
+
+  const getUserName = () => {
+    const user = firebase.auth().currentUser;
+    const unsubscribe = db
+      .collection("users")
+      .where("owner_uid", "==", user.uid)
+      .limit(1)
+      .onSnapshot((snapshot) =>
+        snapshot.docs.map((doc) => {
+          setCurrentLoggedUser({
+            username: doc.data().username,
+            profilePicture: doc.data().profilePicture,
+          });
+        })
+      );
+
+    return unsubscribe;
+  };
+
+  useEffect(() => {
+    getUserName();
+  }, []);
+
+  const uploadPostToFire = (imageUrl, caption) => {
+    const unsubscribe = db
+      .collection("users")
+      .doc(firebase.auth().currentUser.email)
+      .collection("posts")
+      .add({
+        imageUrl: imageUrl,
+        user: currentLoggedUser.username,
+        owner_uid: firebase.auth().currentUser.uid,
+        caption: caption,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        likes: 0,
+        likes_by_users: [],
+        comments: [],
+      })
+      .then(() => navigation.goBack());
+
+    return unsubscribe;
+  };
+
   return (
     <Formik
       initialValues={{ caption: "", imageUrl: "" }}
       validationSchema={uploadPostSchema}
       validateOnMount={true}
       onSubmit={(values) => {
-        console.log("Values:", values);
-        navigation.navigate(routes.HOME_SCREEN);
+        uploadPostToFire(values.imageUrl, values.caption);
       }}
     >
       {({
@@ -78,6 +122,7 @@ function FormikPostUploader({ navigation }) {
               placeholderTextColor="gray"
               value={values.imageUrl}
               autoCapitalize="none"
+              autoCorrect={false}
             />
             {errors.imageUrl && (
               <Text style={{ color: "red" }}>{errors.imageUrl}</Text>
